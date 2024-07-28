@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<base target="_top">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+        integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <title>HR Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+        }
+
+        .sidebar {
+            min-width: 250px;
+            max-width: 250px;
+            background-color: #e3f2fd;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            width: 100%;
+        }
+
+        .sidebar nav {
+            width: 100%;
+        }
+
+        .nav-link {
+            padding: 15px 20px;
+            cursor: pointer;
+        }
+
+        .page-content {
+            flex-grow: 1;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 40px;
+            border-radius: 0 0 50% 50% / 0 0 10% 10%;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 0.2em;
+        }
+
+        .header h3 {
+            font-size: 1.5em;
+            font-weight: 300;
+        }
+
+        .candidate-list {
+            margin-top: 20px;
+        }
+
+        .candidate-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+
+        .candidate-card img {
+            border-radius: 50%;
+            margin-right: 15px;
+        }
+
+        .candidate-card div {
+            margin-right: 15px;
+        }
+
+        .candidate-card button {
+            margin-right: 5px;
+        }
+
+        .analysis-section {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .analysis-section h4 {
+            margin-bottom: 20px;
+        }
+
+  /* Loading Indicator Styles */
+#loadingIndicator {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none; /* Ensure it is hidden initially */
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.spinner-border {
+    width: 4rem;
+    height: 4rem;
+    border-width: 0.5rem;
+    border-top-color: #3498db; /* Change the color to a gradient */
+    border-right-color: #9b59b6;
+    border-bottom-color: #e74c3c;
+    border-left-color: #f1c40f;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.loading-message {
+    margin-top: 1rem;
+    color: white;
+    font-size: 1.2rem;
+    text-align: center;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+    </style>
+    
+</head>
+
+<body>
+    <div id="loadingIndicator" style="display:none;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+            <div class="loading-message">Please wait, loading...</div>
+    </div>
+    <div class="sidebar">
+        <h2>Menu</h2>
+        <nav class="nav flex-column">
+            <a class="nav-link active" aria-current="page" href="javascript:void(0);" onclick="loadPage('Index')">Home</a>
+            <a class="nav-link" href="javascript:void(0);" onclick="loadPage('user')">User</a>
+            <a class="nav-link" href="javascript:void(0);" onclick="loadPage('calendar')">My Calendar</a>
+            <a class="nav-link" href="javascript:void(0);" onclick="loadPage('selectedCandidates')">Selected Candidates</a>
+            <a class="nav-link" href="javascript:void(0);" onclick="loadPage('feedback')">Feedback Analysis</a>
+        </nav>
+    </div>
+
+    <div class="page-content">
+        <div id="mainContent">
+            <div class="header">
+                <h1>Welcome Back</h1>
+                <h3>Human Resource Department</h3>
+            </div>
+
+            <div class="container candidate-list">
+                <h4>List of Applicants</h4>
+                <div id="numberOfApplicants"></div>
+                <div id="candidateContainer">
+                    <!-- Candidates will be loaded here -->
+                </div>
+            </div>
+
+            <div class="analysis-section">
+                <h4>Analysis</h4>
+                <div id="chartContainer">
+                    <!-- Pie chart will be loaded here -->
+                </div>
+                <div class="container">
+    <h4>Feedback Details</h4>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Candidate Name</th>
+                <th>Candidate Email</th>
+                <th>Interview Date</th>
+                <th>Interview Time</th>
+                <th>Remarks</th>
+                <th>General Comments</th>
+                <th>Satisfaction</th>
+            </tr>
+        </thead>
+        <tbody id="feedbackTableBody">
+            <!-- Feedback details will be loaded here -->
+        </tbody>
+    </table>
+</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+
+
+       function loadPage(page, email = null) {
+    // Save the current page in session storage
+    sessionStorage.setItem('currentPage', page);
+
+    google.script.run.withSuccessHandler(function(html) {
+        document.getElementById('mainContent').innerHTML = html;
+        console.log('Loaded page:', page); // Add this line for debugging
+
+        // Call additional functions based on the page
+        if (page === 'Index') {
+            loadMainPage();
+        } else if (page === 'selectedCandidates') {
+            if (!google.charts.loaded) {
+                google.charts.loaded = true;
+                google.charts.load('current', {'packages':['corechart']});
+            }
+
+            google.charts.setOnLoadCallback(function() {
+                loadSelectedCandidates();
+                loadSelectedPieChart();
+                loadAwardsBarChart();
+                loadCertificationsColumnChart();
+            });
+        }  else if (page === 'user') {
+            displayProfilePic();
+        } else if (page === 'feedback') {
+            setTimeout(function() {
+                drawChart();
+                loadFeedbackDetails();
+            }, 0);
+        } else if (page === 'scheduleInterview') {
+            loadScheduleInterview(email);
+        }
+        // Add any additional page-specific calls here
+    }).include(page);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize google.charts.loaded
+    google.charts.loaded = false;
+    
+    // Retrieve the last visited page from session storage, default to 'Index'
+    var currentPage = sessionStorage.getItem('currentPage') || 'Index';
+    loadPage(currentPage);
+});
+
+function drawChart() {
+      console.log('drawChart function called'); // Debugging log
+
+      google.script.run.withSuccessHandler(function(data) {
+        console.log('Feedback data:', data); // Debugging log
+
+        var feedbackData = [['Feedback Type', 'Count']];
+        feedbackData.push(['Positive', data.positive]);
+        feedbackData.push(['Negative', data.negative]);
+
+        var dataTable = google.visualization.arrayToDataTable(feedbackData);
+
+        var options = {
+          title: 'Feedback Analysis',
+          pieHole: 0.4,
+        };
+
+        var chart = new google.visualization.PieChart(document.getElementById('piechart'));
+        chart.draw(dataTable, options);
+      }).getFeedbackData();
+    }
+
+
+function loadMainPage() {
+    document.getElementById('mainContent').innerHTML = `
+        <div class="header">
+            <h1>Welcome Back</h1>
+            <h3>Human Resource Department</h3>
+        </div>
+        <div class="container candidate-list">
+            <h4>List of Applicants</h4>
+            <div id="numberOfApplicants"></div>
+            <div id="candidateContainer">
+                <!-- Candidates will be loaded here -->
+            </div>
+        </div>
+        <div class="analysis-section">
+            <h4>Analysis</h4>
+            <div id="chartContainer">
+                <!-- Pie chart will be loaded here -->
+            </div>
+        </div>`;
+    loadNumberOfApplicants();
+    loadCandidates();
+    loadPieChart();
+}
+
+function loadNumberOfApplicants() {
+    google.script.run.withSuccessHandler(displayNumberOfApplicants).getNumberOfApplicants();
+}
+
+function displayNumberOfApplicants(count) {
+    document.getElementById('numberOfApplicants').textContent = `Number of Applicants: ${count}`;
+}
+
+function loadCandidates() {
+    google.script.run.withSuccessHandler(displayCandidates).getCandidates();
+}
+
+function displayCandidates(candidates) {
+    const container = document.getElementById('candidateContainer');
+    container.innerHTML = '';
+    candidates.forEach(candidate => {
+        const card = document.createElement('div');
+        card.className = 'candidate-card';
+        card.innerHTML = `
+            <div>${candidate.name}</div>
+            <div>${candidate.email}</div>
+            <div><a href="${candidate.resume}" target="_blank">Resume</a></div>
+            ${candidate.status === '' ? `
+            <div id="buttons-${candidate.email}">
+                <button class="btn btn-success" onclick="selectCandidate('${candidate.email}', this)">Select</button>
+                <button class="btn btn-danger" onclick="declineCandidate('${candidate.email}', this)">Decline</button>
+            </div>
+            ` : ''}
+            <div id="status-${candidate.email}">${candidate.status}</div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+  // LOADING
+  function showLoading() {
+      document.getElementById('loadingIndicator').style.display = 'flex';
+  }
+
+  function hideLoading() {
+      document.getElementById('loadingIndicator').style.display = 'none';
+  }
+
+        function selectCandidate(email, button) {
+            showLoading();
+            google.script.run.withSuccessHandler(() => {
+                document.getElementById(`buttons-${email}`).innerHTML = '';
+                document.getElementById(`status-${email}`).textContent = 'Selected';
+                hideLoading();
+            }).withFailureHandler(() => {
+                hideLoading();
+                alert('An error occurred while selecting the candidate.');
+            }).selectCandidate(email);
+            loadPieChart();
+        }
+
+        function declineCandidate(email, button) {
+            showLoading();
+            google.script.run.withSuccessHandler(() => {
+                document.getElementById(`buttons-${email}`).innerHTML = '';
+                document.getElementById(`status-${email}`).textContent = 'Declined';
+                const card = button.closest('.candidate-card');
+                card.parentNode.appendChild(card); // Move to the bottom
+                hideLoading();
+            }).withFailureHandler(() => {
+                hideLoading();
+                alert('An error occurred while declining the candidate.');
+            }).declineCandidate(email);
+        }
+
+        function loadPieChart() {
+            google.script.run.withSuccessHandler(drawPieChart).getPieChartData();
+        }
+
+        function drawPieChart(data) {
+            const container = document.getElementById('chartContainer');
+            const chart = new google.visualization.PieChart(container);
+            const dataTable = google.visualization.arrayToDataTable(data);
+            const options = { title: 'Candidate Status Distribution' };
+            chart.draw(dataTable, options);
+        }
+
+// selectedCandidate
+function loadSelectedPage() {
+    document.getElementById('mainContent').innerHTML = `
+        <div class="container candidate-list">
+            <h4>List of Applicants</h4>
+            <div id="candidateSelectedContainer">
+                <!-- Candidates will be loaded here -->
+            </div>
+        </div>
+        <div class="analysis-section">
+            <h4>Analysis</h4>
+            <div class="chartContainer">
+                <div id="pieChartSelectedContainer" class="chart"></div>
+                <div id="barChartAwardsContainer" class="chart"></div>
+                <div id="columnChartCertificationsContainer" class="chart"></div>
+            </div>
+        </div>`;
+    loadSelectedCandidates();
+    
+    // Ensure that Google Charts library is loaded
+    google.charts.load('current', {'packages':['corechart']});
+    google.charts.setOnLoadCallback(initializeCharts);}
+
+
+function loadSelectedCandidates() {
+    google.script.run.withSuccessHandler(displaySelectedCandidates).getSelectedCandidates();
+}
+
+function displaySelectedCandidates(candidates) {
+    const container = document.getElementById('candidateSelectedContainer');
+    container.innerHTML = '';
+    candidates.forEach(candidate => {
+        const card = document.createElement('div');
+        card.className = 'candidate-card';
+        card.innerHTML = `
+            <div>${candidate.name}</div>
+            <div>${candidate.email}</div>
+            <div><a href="${candidate.resume}" target="_blank">Resume</a></div>
+            ${candidate.status === '' ? `
+            <div id="buttons-${candidate.email}">
+                <button class="btn btn-success" onclick="loadPage('scheduleInterview', '${candidate.email}')">Schedule</button>
+            </div>
+            ` : ''}
+            <div id="status-${candidate.email}">${candidate.status}</div>
+            ${candidate.status === 'Scheduled' ? `
+            <div>
+                <a href="https://forms.gle/YR5LqmKNkxZBagNX6" target="_blank" class="btn btn-info">Feedback Form</a>
+            </div>
+            ` : ''}
+        `;
+        container.appendChild(card);
+    });
+}
+
+function initializeCharts() {
+    google.script.run.withSuccessHandler(() => {
+        loadSelectedPieChart();
+        loadAwardsBarChart();
+        loadCertificationsColumnChart();
+    }).generateCharts();  // Ensure charts are generated before fetching data
+}
+
+function loadSelectedPieChart() {
+    google.script.run.withSuccessHandler(drawSelectedPieChart).getSelectedPieChartData();
+}
+
+function drawSelectedPieChart(data) {
+    const container = document.getElementById('pieChartSelectedContainer');
+    const chart = new google.visualization.PieChart(container);
+    const dataTable = google.visualization.arrayToDataTable(data);
+    const options = { title: 'Candidate Expertise Distribution' };
+    chart.draw(dataTable, options);
+}
+
+function loadAwardsBarChart() {
+    google.script.run.withSuccessHandler(drawAwardsBarChart).getAwardsBarChartData();
+}
+
+function drawAwardsBarChart(data) {
+    const container = document.getElementById('barChartAwardsContainer');
+    const chart = new google.visualization.BarChart(container);
+    const dataTable = google.visualization.arrayToDataTable(data);
+    const options = { title: 'Number of Awards per Candidate' };
+    chart.draw(dataTable, options);
+}
+
+function loadCertificationsColumnChart() {
+    google.script.run.withSuccessHandler(drawCertificationsColumnChart).getCertificationsColumnChartData();
+}
+
+function drawCertificationsColumnChart(data) {
+    const container = document.getElementById('columnChartCertificationsContainer');
+    const chart = new google.visualization.ColumnChart(container);
+    const dataTable = google.visualization.arrayToDataTable(data);
+    const options = { title: 'Certifications Distribution' };
+    chart.draw(dataTable, options);
+}
+
+
+
+//schedule interview
+function loadScheduleInterview(email) {
+    document.getElementById('mainContent').innerHTML = `
+        <h2>Schedule Interview</h2>
+        <form id="scheduleForm" class="row" onsubmit="submitForm(event)">
+                <div class="col-md-6 mb-3">
+                    <label for="candidateName" class="form-label">Candidate Name:</label>
+                    <input type="text" class="form-control" id="candidateName" name="candidateName" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="candidateEmail" class="form-label">Candidate Email</label>
+                    <input type="email" class="form-control" id="candidateEmail" value="${email}" readonly>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="interviewerEmail" class="form-label">Interviewer Email:</label>
+                    <input type="email" class="form-control" id="interviewerEmail" name="interviewerEmail" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="interviewDate" class="form-label">Interview Date</label>
+                    <input type="date" class="form-control" id="interviewDate" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                <label for="interviewTime" class="form-label">Interview Time</label>
+                <input type="time" class="form-control" id="interviewTime" required>
+                </div>
+                <div class="col-12">
+                    <button type="button" class="btn btn-primary" onclick="submitForm(this)">Schedule Interview</button>
+                </div>
+            </form>  
+    `;
+}
+
+  function submitForm() {
+      const formData = {
+          candidateName: document.getElementById('candidateName').value,
+          candidateEmail: document.getElementById('candidateEmail').value,
+          interviewerEmail: document.getElementById('interviewerEmail').value,
+          interviewDate: document.getElementById('interviewDate').value,
+          interviewTime: document.getElementById('interviewTime').value,
+      };
+
+      console.log(formData);
+      google.script.run.withSuccessHandler(() => {
+          scheduleCandidate(formData.candidateEmail);
+          document.getElementById('scheduleForm').reset();
+          loadPage('selectedCandidates');
+      }).scheduleInterviewFromWeb(formData);
+  }
+
+  function scheduleCandidate(email) {
+      google.script.run.withSuccessHandler(() => {
+          document.getElementById(`buttons-${email}`).innerHTML = '';
+          document.getElementById(`status-${email}`).textContent = 'Scheduled';
+      }).scheduleCandidateStatus(email);
+  }
+
+
+  function loadFeedbackDetails() {
+    console.log('loadFeedbackDetails function called');
+
+    google.script.run.withSuccessHandler(function(data) {
+        console.log('Feedback details data:', data);
+        if (data && data.details) {
+            createFeedbackTable(data.details);
+        } else {
+            console.error('No feedback details available.');
+        }
+    }).getFeedbackDetails();
+}
+
+
+
+    
+
+    function createFeedbackTable(details) {
+    console.log('createFeedbackTable called with details:', details);
+
+    var tableBody = document.getElementById('feedbackTableBody');
+    if (!tableBody) {
+        console.error('Table body element not found');
+        return;
+    }
+    tableBody.innerHTML = ''; // Clear any existing content
+
+    if (!details || !Array.isArray(details)) {
+        console.error('Invalid feedback details format.');
+        return;
+    }
+
+    details.forEach(function(detail) {
+        var row = document.createElement('tr');
+        
+        // Create cells for each column
+        var nameCell = document.createElement('td');
+        var emailCell = document.createElement('td');
+        var dateCell = document.createElement('td');
+        var timeCell = document.createElement('td');
+        var remarksCell = document.createElement('td');
+        var commentsCell = document.createElement('td');
+        var satisfactionCell = document.createElement('td');
+
+        // Populate cells with data
+        nameCell.textContent = detail.candidateName;
+        emailCell.textContent = detail.candidateEmail;
+        dateCell.textContent = new Date(detail.interviewDate).toLocaleDateString(); // Format date
+        timeCell.textContent = detail.interviewTime; // Use formatted time string directly
+        remarksCell.textContent = detail.remarks;
+        commentsCell.textContent = detail.generalComments;
+
+        // Create stars for satisfaction
+        satisfactionCell.innerHTML = createStarRating(detail.satisfaction);
+
+        // Append cells to row
+        row.appendChild(nameCell);
+        row.appendChild(emailCell);
+        row.appendChild(dateCell);
+        row.appendChild(timeCell);
+        row.appendChild(remarksCell);
+        row.appendChild(commentsCell);
+        row.appendChild(satisfactionCell);
+
+        // Append row to table body
+        tableBody.appendChild(row);
+    });
+}
+
+    function createStarRating(rating) {
+        var stars = '';
+        var ratingValue = rating.match(/★/g)?.length || 0; // Extract number of solid stars
+        for (var i = 0; i < 5; i++) {
+            stars += i < ratingValue ? '★' : '☆'; // Solid star or empty star
+        }
+        return stars;
+    }
+
+    function displayProfilePic() {
+            google.script.run.withSuccessHandler(function(imageDataUrl) {
+                var profilePicElement = document.getElementById('profilePic');
+                if (profilePicElement) {
+                    profilePicElement.src = imageDataUrl;
+                } else {
+                    console.error('Profile picture element not found');
+                }
+            }).getProfilePic();
+        }
+
+
+    </script>
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+    <script>
+        google.charts.load('current', { packages: ['corechart'] });
+    </script>
+</body>
+
+</html>
