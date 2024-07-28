@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Feedback Analysis</title>
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  <script type="text/javascript">
+    google.charts.load('current', {'packages':['corechart']});
+    google.charts.setOnLoadCallback(drawChart);
+
+    document.addEventListener('DOMContentLoaded', function() {
+        drawChart(); // Ensure this function is defined
+        loadFeedbackDetails(); // This will be called when feedback.html is loaded
+    });
+
+    function drawChart() {
+        google.script.run.withSuccessHandler(function(data) {
+            var feedbackData = [['Feedback Type', 'Count']];
+            feedbackData.push(['Positive', data.positive]);
+            feedbackData.push(['Negative', data.negative]);
+
+            var dataTable = google.visualization.arrayToDataTable(feedbackData);
+
+            var options = {
+                title: 'Feedback Analysis',
+                pieHole: 0.4,
+                colors: ['#4caf50', '#f44336'], // Green for Positive, Red for Negative
+                pieSliceText: 'label',
+                legend: { position: 'bottom' },
+                chartArea: { width: '80%', height: '70%' }
+            };
+
+            var chart = new google.visualization.PieChart(document.getElementById('piechart'));
+            chart.draw(dataTable, options);
+        }).getFeedbackData();
+    }
+
+    function loadFeedbackDetails() {
+        google.script.run.withSuccessHandler(function(data) {
+            if (data && data.details) {
+                createFeedbackTable(data.details);
+            } else {
+                console.error('No feedback details available.');
+            }
+        }).getFeedbackDetails();
+    }
+
+    function createFeedbackTable(details) {
+        var tableBody = document.getElementById('feedbackTableBody');
+        if (!tableBody) {
+            console.error('Table body element not found');
+            return;
+        }
+        tableBody.innerHTML = ''; // Clear any existing content
+
+        if (!details || !Array.isArray(details)) {
+            console.error('Invalid feedback details format.');
+            return;
+        }
+
+        details.forEach(function(detail) {
+            var row = document.createElement('tr');
+            
+            // Create cells for each column
+            var nameCell = document.createElement('td');
+            var emailCell = document.createElement('td');
+            var dateCell = document.createElement('td');
+            var timeCell = document.createElement('td');
+            var remarksCell = document.createElement('td');
+            var commentsCell = document.createElement('td');
+            var satisfactionCell = document.createElement('td');
+
+            // Populate cells with data
+            nameCell.textContent = detail.candidateName;
+            emailCell.textContent = detail.candidateEmail;
+            dateCell.textContent = new Date(detail.interviewDate).toLocaleDateString(); // Format date
+            timeCell.textContent = detail.interviewTime; // Use formatted time string directly
+            remarksCell.textContent = detail.remarks;
+            commentsCell.textContent = detail.generalComments;
+
+            // Create stars for satisfaction
+            satisfactionCell.innerHTML = createStarRating(detail.satisfaction);
+
+            // Append cells to row
+            row.appendChild(nameCell);
+            row.appendChild(emailCell);
+            row.appendChild(dateCell);
+            row.appendChild(timeCell);
+            row.appendChild(remarksCell);
+            row.appendChild(commentsCell);
+            row.appendChild(satisfactionCell);
+
+            // Append row to table body
+            tableBody.appendChild(row);
+        });
+    }
+
+    function createStarRating(rating) {
+        var stars = '';
+        var ratingValue = rating.match(/★/g)?.length || 0; // Extract number of solid stars
+        for (var i = 0; i < 5; i++) {
+            stars += i < ratingValue ? '★' : '☆'; // Solid star or empty star
+        }
+        return stars;
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #fafafa;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      width: 85%;
+      max-width: 1200px;
+      margin: 30px auto;
+      position: relative;
+    }
+
+    .chart-container {
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      text-align: center;
+      position: relative;
+      margin-bottom: 30px;
+    }
+
+    .chart-container h4 {
+      margin-bottom: 20px;
+      color: #007bff;
+      font-size: 1.75em;
+    }
+
+    #piechart {
+      width: 100%;
+      height: 400px;
+    }
+
+    .suggestions-frame {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: #f9f9f9;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      width: 260px;
+      text-align: left;
+      border: 1px solid #ddd;
+    }
+
+    .suggestions-frame h5 {
+      margin-top: 0;
+      color: #007bff;
+      font-size: 1.2em;
+    }
+
+    .suggestions-frame p {
+      margin: 10px 0;
+      font-size: 0.9em;
+      line-height: 1.5;
+    }
+
+    .suggestions-frame img {
+      width: 30px;
+      height: auto;
+      vertical-align: middle;
+      margin-right: 10px;
+    }
+
+    .table-container {
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .table-title {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 1.75em;
+      font-weight: bold;
+      color: #007bff;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    table th, table td {
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+
+    table th {
+      background-color: #f2f2f2;
+      color: #007bff;
+      font-weight: bold;
+    }
+
+    table tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    table tr:hover {
+      background-color: #f1f1f1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="chart-container">
+      <h4>Feedback from Candidates</h4>
+      <div id="piechart"></div>
+      <div class="suggestions-frame">
+        <h5>Suggestions for Improvement</h5>
+        <p><img src="https://img.icons8.com/ios-filled/50/007bff/idea.png" alt="Idea Icon"/> Provide clearer job role expectations to candidates.</p>
+        <p><img src="https://img.icons8.com/ios-filled/50/007bff/comments.png" alt="Comments Icon"/> Offer more detailed feedback post-interview.</p>
+        <p><img src="https://img.icons8.com/ios-filled/50/007bff/questions.png" alt="Questions Icon"/> Ensure consistency in questioning among interviewers.</p>
+        <p><img src="https://img.icons8.com/ios-filled/50/007bff/time.png" alt="Time Icon"/> Improve response time to candidates.</p>
+      </div>
+    </div>
+    <div class="table-container">
+      <div class="table-title">Feedback On Candidates</div>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Candidate Name</th>
+            <th>Candidate Email</th>
+            <th>Interview Date</th>
+            <th>Interview Time</th>
+            <th>Remarks</th>
+            <th>General Comments</th>
+            <th>Satisfaction</th>
+          </tr>
+        </thead>
+        <tbody id="feedbackTableBody">
+          <!-- Feedback details will be loaded here -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>
+
+
+
+
+
+
+
+
