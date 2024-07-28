@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <base target="_top">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+        integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <title>HR Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+        }
+
+        .sidebar {
+            min-width: 250px;
+            max-width: 250px;
+            background-color: #e3f2fd;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            width: 100%;
+        }
+
+        .sidebar nav {
+            width: 100%;
+        }
+
+        .nav-link {
+            padding: 15px 20px;
+            cursor: pointer;
+        }
+
+        .page-content {
+            flex-grow: 1;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 40px;
+            border-radius: 0 0 50% 50% / 0 0 10% 10%;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 0.2em;
+        }
+
+        .header h3 {
+            font-size: 1.5em;
+            font-weight: 300;
+        }
+
+        .candidate-list {
+            margin-top: 20px;
+        }
+
+        .candidate-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+
+        .candidate-card img {
+            border-radius: 50%;
+            margin-right: 15px;
+        }
+
+        .candidate-card div {
+            margin-right: 15px;
+        }
+
+        .candidate-card button {
+            margin-right: 5px;
+        }
+
+        .analysis-section {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .analysis-section h4 {
+            margin-bottom: 20px;
+        }
+
+        /* Additional Styles for Chart Container */
+      .chartContainer {
+          display: flex;
+          flex-direction: column; /* Arrange charts vertically */
+          align-items: center; /* Center charts horizontally */
+          gap: 20px;
+          padding: 20px;
+          background-color: #f8f9fa;
+          border-radius: 10px;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .chart {
+          width: 90%; /* Increase the width to 90% of the container */
+          max-width: 1000px; /* Increase the maximum width */
+          padding: 20px;
+          background-color: white;
+          border-radius: 10px;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+          transition: transform 0.3s;
+      }
+
+      .chart:hover {
+          transform: scale(1.05);
+      }
+    </style>
+</head>
+
+<body>
+    <!-- <div class="sidebar">
+        <h2>Menu</h2>
+        <nav class="nav flex-column">
+            <a class="nav-link active" aria-current="page" href="javascript:void(0);" onclick="loadPage('Index')">Home</a>
+            <a class="nav-link" href="javascript:void(0);" onclick="loadPage('user')">User</a>
+            <a class="nav-link" href="javascript:void(0);" onclick="loadPage('calendar')">My Calendar</a>
+            <a class="nav-link" href="javascript:void(0);" onclick="loadPage('selectedCandidates')">Selected Candidates</a>
+            <a class="nav-link" href="javascript:void(0);" onclick="loadPage('feedback')">Feedback Analysis</a>
+        </nav>
+    </div> -->
+
+    <div class="page-content">
+        <div id="mainContent">
+        <div class="container candidate-list">
+            <h4>List of Applicants</h4>
+            <div id="candidateSelectedContainer">
+                <!-- Candidates will be loaded here -->
+            </div>
+        </div>
+        <div class="analysis-section">
+            <h4>Analysis</h4>
+            <div class="chartContainer">
+                <div id="pieChartSelectedContainer" class="chart"></div>
+                <div id="barChartAwardsContainer" class="chart"></div>
+                <div id="columnChartCertificationsContainer" class="chart"></div>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <script>
+        function loadPage(page) {
+            google.script.run.withSuccessHandler(function(html) {
+                document.getElementById('mainContent').innerHTML = html;
+                if (!google.charts.loaded) {
+                    google.charts.loaded = true;
+                    google.charts.load('current', {'packages':['corechart']});
+                }
+
+                google.charts.setOnLoadCallback(function() {
+                    loadSelectedCandidates();
+                    loadSelectedPieChart();
+                    loadAwardsBarChart();
+                    loadCertificationsColumnChart();
+                });
+            }).include(page);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            google.charts.loaded = false;
+            loadPage('selectedCandidate');
+        });
+
+ 
+function loadSelectedCandidates() {
+    google.script.run.withSuccessHandler(displaySelectedCandidates).getSelectedCandidates();
+}
+
+function displaySelectedCandidates(candidates) {
+    const container = document.getElementById('candidateSelectedContainer');
+    container.innerHTML = '';
+    candidates.forEach(candidate => {
+        const card = document.createElement('div');
+        card.className = 'candidate-card';
+        card.innerHTML = `
+            <div>${candidate.name}</div>
+            <div>${candidate.email}</div>
+            <div><a href="${candidate.resume}" target="_blank">Resume</a></div>
+            ${candidate.status === '' ? `
+            <div id="buttons-${candidate.email}">
+                <button class="btn btn-success" onclick="loadPage('scheduleInterview', '${candidate.email}')">Schedule</button>
+            </div>
+            ` : ''}
+            <div id="status-${candidate.email}">${candidate.status}</div>
+            ${candidate.status === 'Scheduled' ? `
+            <div>
+                <a href="https://forms.gle/YR5LqmKNkxZBagNX6" target="_blank" class="btn btn-info">Feedback Form</a>
+            </div>
+            ` : ''}
+        `;
+        container.appendChild(card);
+    });
+}
+
+function initializeCharts() {
+    google.script.run.withSuccessHandler(() => {
+        loadSelectedPieChart();
+        loadAwardsBarChart();
+        loadCertificationsColumnChart();
+    }).generateCharts();  // Ensure charts are generated before fetching data
+}
+
+function loadSelectedPieChart() {
+    google.script.run.withSuccessHandler(drawSelectedPieChart).getSelectedPieChartData();
+}
+
+function drawSelectedPieChart(data) {
+    const container = document.getElementById('pieChartSelectedContainer');
+    const chart = new google.visualization.PieChart(container);
+    const dataTable = google.visualization.arrayToDataTable(data);
+    const options = { title: 'Candidate Expertise Distribution' };
+    chart.draw(dataTable, options);
+}
+
+function loadAwardsBarChart() {
+    google.script.run.withSuccessHandler(drawAwardsBarChart).getAwardsBarChartData();
+}
+
+function drawAwardsBarChart(data) {
+    const container = document.getElementById('barChartAwardsContainer');
+    const chart = new google.visualization.BarChart(container);
+    const dataTable = google.visualization.arrayToDataTable(data);
+    const options = { title: 'Number of Awards per Candidate' };
+    chart.draw(dataTable, options);
+}
+
+function loadCertificationsColumnChart() {
+    google.script.run.withSuccessHandler(drawCertificationsColumnChart).getCertificationsColumnChartData();
+}
+
+function drawCertificationsColumnChart(data) {
+    const container = document.getElementById('columnChartCertificationsContainer');
+    const chart = new google.visualization.ColumnChart(container);
+    const dataTable = google.visualization.arrayToDataTable(data);
+    const options = { title: 'Certifications Distribution' };
+    chart.draw(dataTable, options);
+}
+
+
+
+    </script>
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+    <script>
+        google.charts.load('current', { packages: ['corechart'] });
+    </script>
+</body>
+
+</html>
